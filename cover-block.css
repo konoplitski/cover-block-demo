@@ -1,0 +1,81 @@
+/*
+ * Обложка мероприятия (cover-block, вариант с картинкой .cover-block--image).
+ * Desktop: width >= 768px. Мобильная раскладка (< 768px) не меняется.
+ *
+ * Было: высота блока зависит от вьюпорта — clamp(270px, 60vh, 684px),
+ *       картинка — половина высоты блока (height: 50cqb), размытие вокруг неё.
+ * Стало: высота блока равна высоте самой картинки. Картинка стоит в потоке справа,
+ *       размытая копия остаётся слева и справа от неё. Фон под текстом не меняется.
+ *
+ * Если тексту (заголовок, дата, кнопки) нужно больше места, чем высоте картинки,
+ * блок растёт под текст — ничего не обрезается.
+ *
+ * Селекторы специфичнее исходных: файл можно подключить после стилей сайта как есть
+ * либо перенести объявления в соответствующие правила компонента.
+ */
+
+@media (width >= 768px) {
+  .cover-block.cover-block--image {
+    height: auto;
+    display: grid;
+    /* та же сетка, что у .cover-block__card: картинка встаёт в правые 6 колонок, текст — в левые */
+    grid-template-columns: repeat(var(--tl-grid-columns), 1fr);
+    column-gap: var(--tl-grid-gutter);
+    align-items: center;
+    /* size-контейнер не даёт высоте зависеть от содержимого; inline-size оставляем ради cqi в заголовке */
+    container-type: inline-size;
+    /* ширина зоны размытии больше не зависит от высоты вьюпорта */
+    --cover-block-image-max-width: var(--cover-block-image-default-max-width);
+  }
+
+  /* Размер заголовка считался от высоты блока (7cqb). Высота теперь другая,
+     поэтому берём прежнее значение: 0.3rem + 7% от прежней опорной высоты. */
+  .cover-block.cover-block--image .cover-block__title {
+    --cover-block-title-container-block-size: calc(0.3rem + var(--cover-block-clamped-height) * 0.07);
+  }
+
+  /* Текст: перекрывает все колонки, по вертикали по центру блока */
+  .cover-block.cover-block--image .cover-block__card {
+    grid-row: 1;
+    grid-column: 1 / -1;
+    align-self: center;
+  }
+
+  /* Обёртка картинки: правые 6 колонок, прижата вправо (к правому краю контентной области).
+     Отступ слева = 50px выступа текста (margin-right: -50px у .cover-block__content) + один гаттер. */
+  .cover-block.cover-block--image .cover-block__img {
+    position: static;
+    left: auto;
+    grid-row: 1;
+    grid-column: 7 / -1;
+    justify-self: end;
+    align-self: center;
+    min-width: 0;
+    height: auto;
+    max-width: 100%;
+    max-height: none;
+    margin: 0 0 0 calc(50px + var(--tl-grid-gutter));
+  }
+
+  /* Размытая копия: правая часть блока, как раньше (позиционируется от .cover-block).
+     Чтобы размытие шло на всю ширину — замените на inset: 0; width: 100%. */
+  .cover-block.cover-block--image .cover-block__img-cover--blur {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: var(--cover-block-image-max-width);
+    max-width: none;
+  }
+
+  /* Картинка: натуральный размер. Ужимается, только если не влезает в свою область
+     (не даёт наехать на текст) или выше 684px. Пропорции сохраняются. */
+  .cover-block.cover-block--image .cover-block__img-contain {
+    position: relative;
+    inset: auto;
+    translate: none;
+    width: auto;
+    /* фиксированная высота вместо натуральной: задайте --cover-block-image-height на .cover-block */
+    height: var(--cover-block-image-height, auto);
+    max-width: 100%;
+    max-height: 684px;
+  }
+}
